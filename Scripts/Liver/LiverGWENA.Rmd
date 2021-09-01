@@ -1,0 +1,477 @@
+---
+title: "LiverGwena"
+author: "MAH"
+date: "6/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Install Essential Libraries
+```{r}
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+if (!requireNamespace("tidyverse", quietly = TRUE))
+    install.packages("tidyverse")
+
+if (!requireNamespace("data.table", quietly = TRUE))
+    install.packages("data.table")
+
+if (!requireNamespace("corrplot", quietly = TRUE))
+    install.packages("corrplot")
+
+if (!requireNamespace("GWENA", quietly = TRUE))
+BiocManager::install("GWENA")
+
+if (!requireNamespace("enrichR", quietly = TRUE))
+    install.packages("enrichR")
+
+if (!requireNamespace("devtools", quietly = TRUE))
+    install.packages("devtools")
+
+if (!requireNamespace("factoextra", quietly = TRUE))
+    install.packages("factoextra")
+
+if (!requireNamespace("FactoMineR", quietly = TRUE))
+    install.packages("FactoMineR")
+
+if (!requireNamespace("here", quietly = TRUE))
+    install.packages("here")
+```
+
+
+Load essential libraries
+
+```{r}
+
+library("GWENA")
+library("tidyverse")
+library("data.table")
+library("here")
+library("corrplot")
+
+library("devtools")
+library("FactoMineR")
+library("factoextra")
+library("Biobase")
+library("enrichR")
+
+library("readxl")
+library("openxlsx")
+
+```
+
+
+Transpose data so that each column is a gene and each row is a sample/observation
+
+
+```{r}
+
+LiverGenesOriginal <- read.table(here("Results", "Liver", "Consolidated_UnqRefseq_Cpm_AllF2_d42.txt"), header = TRUE)
+LiverGenesOriginal[1:10,1:10]
+
+rownames(LiverGenesOriginal) <- LiverGenesOriginal$gene
+LiverGenesOriginal$gene <- NULL
+LiverGenesOriginal[1:10,1:10]
+
+LiverGenesTrans <- as.matrix(LiverGenesOriginal)
+LiverGenesTrans <- t(LiverGenesTrans)
+LiverGenesTrans <- as.data.frame(LiverGenesTrans)
+LiverGenesTrans[1:10,1:10]
+is_data_expr(LiverGenesTrans)
+
+
+PhenoData <- read.table(here("Data", "PhenotypeData", "Pheno_data.txt"), na.strings = "NA", header = TRUE)
+PhenoData <- PhenoData %>% filter(ID != "s42")
+
+rownames(PhenoData) <- PhenoData$ID
+PhenoData$ID <- NULL
+PhenoData[1:5,]
+
+```
+
+
+```{r}
+
+# refers to number of cores to be used, questions whether Rstudio can use more than 1
+threads_to_use <- 1 
+
+
+LiverGenesFiltered <- filter_RNA_seq(LiverGenesTrans, min_count = 10, method = c("at least one"))
+LiverGenesFiltered2 <- filter_low_var(LiverGenesFiltered, pct = 0.5, type = "median")
+
+#LiverGenesFiltered <- LiverGenesFiltered[, 1:1000]  # reduce size for testing purposes
+#LiverGenesFiltered[1:10,1:10]
+#PhenoData[1:5,]
+
+net <- build_net(LiverGenesFiltered2, cor_func = "spearman", n_threads = threads_to_use)
+
+# Power selected :
+net$metadata$power
+
+# Fit of the power law to data ($R^2$) :
+fit_power_table <- net$metadata$fit_power_table
+fit_power_table[fit_power_table$Power == net$metadata$power, "SFT.R.sq"]
+
+
+```
+
+
+
+
+
+
+```{r}
+
+modules <- detect_modules(LiverGenesFiltered2, 
+                            net$network, 
+                            detailled_result = TRUE,
+                            merge_threshold = 0.25)
+
+
+# Number of modules before merging :
+length(unique(modules$modules_premerge))
+
+
+# Number of modules after merging: 
+length(unique(modules$modules))
+
+
+layout_mod_merge <- plot_modules_merge(
+  modules_premerge = modules$modules_premerge, 
+  modules_merged = modules$modules)
+
+
+```
+
+
+
+
+
+```{r}
+
+ggplot2::ggplot(data.frame(modules$modules %>% stack), 
+                ggplot2::aes(x = ind)) + ggplot2::stat_count() +
+  ggplot2::ylab("Number of genes") +
+  ggplot2::xlab("Module")
+
+```
+
+
+
+
+
+```{r}
+
+phenotype_association <- associate_phenotype(
+  modules$modules_eigengenes, 
+  PhenoData %>% dplyr::select(BW, TG_liver, Chol_liver, Glucose_S, Insulin_S, Trig_S, Chol_S, FGF21_S, UricAcid_S))
+
+plot_modules_phenotype(phenotype_association)
+
+```
+
+
+
+
+
+```{r}
+
+assoc <- t(as.matrix(phenotype_association$association))
+pval <- t(as.matrix(phenotype_association$pval))
+
+corrplot(assoc, p.mat = pval, insig = 'label_sig', pch.cex = 1)
+
+pdf(here("Results", "Liver", "GwenaLiverPhenotypeAssociationPlot.pdf"))
+corrplot(assoc, p.mat = pval, insig = 'label_sig', pch.cex = 1)
+dev.off()
+
+
+```
+
+
+
+
+
+
+```{r}
+
+module0 <- (modules$modules[1])
+fwrite(module0,here("Results", "Liver", "module0.txt"), row.names=FALSE, col.names = FALSE)
+
+module1 <- (modules$modules[2])
+fwrite(module1,here("Results", "Liver", "module1.txt"), row.names=FALSE, col.names = FALSE)
+
+module2 <- (modules$modules[3])
+fwrite(module2,here("Results", "Liver", "module2.txt"), row.names=FALSE, col.names = FALSE)
+
+module3 <- (modules$modules[4])
+fwrite(module3,here("Results", "Liver", "module3.txt"), row.names=FALSE, col.names = FALSE)
+
+module4 <- (modules$modules[5])
+fwrite(module4, here("Results", "Liver", "module4.txt"), row.names=FALSE, col.names = FALSE)
+
+module5 <- (modules$modules[6])
+fwrite(module5,here("Results", "Liver", "module5.txt"), row.names=FALSE, col.names = FALSE)
+
+
+```
+
+
+
+
+
+Perform PCA on Modules with significant associations and take first PC to identify weights and on a per gene basis. Separate into gene sets that are positively or negatively associated with the module and use these separately in enrichment analysis in EnrichR.
+
+
+
+Analysis for Module 2:
+
+```{r}
+
+module2elem <- module2[[1]]
+LiverGenesFiltered3 <- dplyr::select(LiverGenesFiltered2, one_of(module2elem))
+
+ModulePC <- PCA(LiverGenesFiltered3, scale.unit = TRUE, ncp = 1, graph = TRUE)
+Eigen <- get_eigenvalue(ModulePC)
+fviz_eig(ModulePC)
+VariableWeights <- get_pca_var(ModulePC)$coord
+VariableWeights <- as.data.frame(VariableWeights)
+
+VariableWeights <- VariableWeights %>% arrange(VariableWeights)
+
+Module2Pos <- VariableWeights %>% filter(VariableWeights >= 0)
+Module2Neg <- VariableWeights %>% filter(VariableWeights < 0)
+
+write.table(Module2Pos, file = here("Results", "Liver", "Module2PositiveGenes.txt"), sep="\t", quote=FALSE)
+write.table(Module2Neg, file = here("Results", "Liver", "Module2NegativeGenes.txt"), sep="\t", quote=FALSE)
+
+M2Pos <- rownames(Module2Pos)
+M2Neg <- rownames(Module2Neg)
+
+
+setEnrichrSite("Enrichr")
+dbs <- c("GO_Biological_Process_2021", "TRRUST_Transcription_Factors_2019")
+
+PosEnriched <- enrichr(M2Pos, dbs)
+NegEnriched <- enrichr(M2Neg, dbs)
+
+
+
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module2PositiveGOBioProcessPlot.pdf"))
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module2PositiveTrrustTfPlot.pdf"))
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+Posm2Go <- PosEnriched[[1]]
+Posm2TF <- PosEnriched[[2]]
+
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module2NegativeGOBioProcessPlot.pdf"))
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module2NegativeTrrustTfPlot.pdf"))
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+Negm2Go <- NegEnriched[[1]]
+Negm2TF <- NegEnriched[[2]]
+
+EnrichmentAnalysis <- createWorkbook()
+
+addWorksheet(EnrichmentAnalysis, "PosGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "NegGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "PosTRRUST_2019")
+addWorksheet(EnrichmentAnalysis, "NegTRRUST_2019")
+
+
+writeData(EnrichmentAnalysis, sheet = "PosGOBioProcess2021", slice_min(Posm2Go, P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegGOBioProcess2021", slice_min(Negm2Go,P.value, n = 20))
+
+writeData(EnrichmentAnalysis, sheet = "PosTRRUST_2019", slice_min(Posm2TF,P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegTRRUST_2019", slice_min(Negm2TF,P.value, n = 20))
+
+saveWorkbook(EnrichmentAnalysis, here("Results", "Liver", "Module2EnrichmentAnalysis.xlsx"))
+
+```
+
+
+
+
+
+
+Analysis for Module 3:
+
+```{r}
+
+module3elem <- module3[[1]]
+LiverGenesFiltered3 <- dplyr::select(LiverGenesFiltered2, one_of(module3elem))
+
+ModulePC <- PCA(LiverGenesFiltered3, scale.unit = TRUE, ncp = 1, graph = TRUE)
+Eigen <- get_eigenvalue(ModulePC)
+fviz_eig(ModulePC)
+VariableWeights <- get_pca_var(ModulePC)$coord
+VariableWeights <- as.data.frame(VariableWeights)
+
+VariableWeights <- VariableWeights %>% arrange(VariableWeights)
+
+Module3Pos <- VariableWeights %>% filter(VariableWeights >= 0)
+Module3Neg <- VariableWeights %>% filter(VariableWeights < 0)
+
+write.table(Module3Pos, file = here("Results", "Liver", "Module3PositiveGenes.txt"), sep="\t", quote=FALSE)
+write.table(Module3Neg, file = here("Results", "Liver", "Module3NegativeGenes.txt"), sep="\t", quote=FALSE)
+
+M3Pos <- rownames(Module3Pos)
+M3Neg <- rownames(Module3Neg)
+
+
+setEnrichrSite("Enrichr")
+dbs <- c("GO_Biological_Process_2021", "TRRUST_Transcription_Factors_2019")
+
+PosEnriched <- enrichr(M3Pos, dbs)
+NegEnriched <- enrichr(M3Neg, dbs)
+
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module3PositiveGOBioProcessPlot.pdf"))
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module3PositiveTrrustTfPlot.pdf"))
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+Posm3Go <- PosEnriched[[1]]
+Posm3TF <- PosEnriched[[2]]
+
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module3NegativeGOBioProcessPlot.pdf"))
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module3NegativeTrrustTfPlot.pdf"))
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+Negm3Go <- NegEnriched[[1]]
+Negm3TF <- NegEnriched[[2]]
+
+
+EnrichmentAnalysis <- createWorkbook()
+
+addWorksheet(EnrichmentAnalysis, "PosGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "NegGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "PosTRRUST_2019")
+addWorksheet(EnrichmentAnalysis, "NegTRRUST_2019")
+
+
+writeData(EnrichmentAnalysis, sheet = "PosGOBioProcess2021", slice_min(Posm3Go, P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegGOBioProcess2021", slice_min(Negm3Go,P.value, n = 20))
+
+writeData(EnrichmentAnalysis, sheet = "PosTRRUST_2019", slice_min(Posm3TF,P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegTRRUST_2019", slice_min(Negm3TF,P.value, n = 20))
+
+saveWorkbook(EnrichmentAnalysis, here("Results", "Liver", "Module3EnrichmentAnalysis.xlsx"))
+
+```
+
+
+
+Analysis for Module 5:
+
+```{r}
+
+module5elem <- module5[[1]]
+LiverGenesFiltered3 <- dplyr::select(LiverGenesFiltered2, one_of(module5elem))
+
+ModulePC <- PCA(LiverGenesFiltered3, scale.unit = TRUE, ncp = 1, graph = TRUE)
+Eigen <- get_eigenvalue(ModulePC)
+fviz_eig(ModulePC)
+VariableWeights <- get_pca_var(ModulePC)$coord
+VariableWeights <- as.data.frame(VariableWeights)
+
+VariableWeights <- VariableWeights %>% arrange(VariableWeights)
+
+Module5Pos <- VariableWeights %>% filter(VariableWeights >= 0)
+Module5Neg <- VariableWeights %>% filter(VariableWeights < 0)
+
+write.table(Module5Pos, file = here("Results", "Liver", "Module5PositiveGenes.txt"), sep="\t", quote=FALSE)
+write.table(Module5Neg, file = here("Results", "Liver", "Module5NegativeGenes.txt"), sep="\t", quote=FALSE)
+
+M5Pos <- rownames(Module5Pos)
+M5Neg <- rownames(Module5Neg)
+
+
+setEnrichrSite("Enrichr")
+dbs <- c("GO_Biological_Process_2021", "TRRUST_Transcription_Factors_2019")
+
+PosEnriched <- enrichr(M5Pos, dbs)
+NegEnriched <- enrichr(M5Neg, dbs)
+
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module5PositiveGOBioProcessPlot.pdf"))
+plotEnrich(PosEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module5PositiveTrrustTfPlot.pdf"))
+plotEnrich(PosEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+
+Posm5Go <- PosEnriched[[1]]
+Posm5TF <- PosEnriched[[2]]
+
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module5NegativeGOBioProcessPlot.pdf"))
+plotEnrich(NegEnriched[[1]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+pdf(here("Results", "Liver", "Module5NegativeTrrustTfPlot.pdf"))
+plotEnrich(NegEnriched[[2]], showTerms = 10, numChar = 75, y = "Ratio", orderBy = "P.value")
+dev.off()
+
+Negm5Go <- NegEnriched[[1]]
+Negm5TF <- NegEnriched[[2]]
+
+
+EnrichmentAnalysis <- createWorkbook()
+
+addWorksheet(EnrichmentAnalysis, "PosGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "NegGOBioProcess2021")
+addWorksheet(EnrichmentAnalysis, "PosTRRUST_2019")
+addWorksheet(EnrichmentAnalysis, "NegTRRUST_2019")
+
+
+writeData(EnrichmentAnalysis, sheet = "PosGOBioProcess2021", slice_min(Posm5Go, P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegGOBioProcess2021", slice_min(Negm5Go,P.value, n = 20))
+
+writeData(EnrichmentAnalysis, sheet = "PosTRRUST_2019", slice_min(Posm5TF,P.value, n = 20))
+writeData(EnrichmentAnalysis, sheet = "NegTRRUST_2019", slice_min(Negm5TF,P.value, n = 20))
+
+saveWorkbook(EnrichmentAnalysis, here("Results", "Liver", "Module5EnrichmentAnalysis.xlsx"))
+
+```
+
+
+

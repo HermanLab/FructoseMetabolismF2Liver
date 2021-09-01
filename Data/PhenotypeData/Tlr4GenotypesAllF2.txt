@@ -1,0 +1,140 @@
+sac_mouse_ID	Tlr4Genotype	GenotypeCode
+1	CA	1
+2	CC	0
+3	CC	0
+4	CA	1
+5	AA	2
+6	CA	1
+7	CC	0
+8	CA	1
+9	AA	2
+10	AA	2
+11	CC	0
+12	CC	0
+13	CC	0
+14	CA	1
+15	CA	1
+16	AA	2
+17	CA	1
+18	AA	2
+19	CC	0
+20	CC	0
+21	CA	1
+22	AA	2
+23	AA	2
+24	CA	1
+25	AA	2
+26	CA	1
+27	AA	2
+28	CA	1
+29	AA	2
+30	AA	2
+31	CC	0
+32	CC	0
+33	CC	0
+34	CA	1
+35	CA	1
+36	CC	0
+37	CA	1
+38	CC	0
+39	AA	2
+40	CC	0
+41	CC	0
+42	AA	2
+43	CC	0
+44	CC	0
+45	CA	1
+46	CA	1
+47	CA	1
+48	AA	2
+49	CA	1
+50	CC	0
+51	CA	1
+52	CA	1
+53	AA	2
+54	CA	1
+55	CA	1
+56	CC	0
+57	AA	2
+58	CC	0
+59	CA	1
+60	CA	1
+61	AA	2
+62	CC	0
+63	CA	1
+64	CC	0
+65	CA	1
+66	AA	2
+67	CC	0
+68	AA	2
+69	AA	2
+70	CC	0
+71	CC	0
+72	CC	0
+72	CC	0
+73	CA	1
+73	CA	1
+74	CA	1
+75	CA	1
+76	CC	0
+77	CA	1
+78	CA	1
+79	CC	0
+80	AA	2
+81	CC	0
+82	CC	0
+83	CA	1
+84	AA	2
+85	CA	1
+86	AA	2
+87	CA	1
+88	CA	1
+89	CA	1
+90	CA	1
+91	CA	1
+92	AA	2
+93	CA	1
+94	CA	1
+95	CA	1
+96	CC	0
+97	AA	2
+97	AA	2
+98	AA	2
+98	AA	2
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		

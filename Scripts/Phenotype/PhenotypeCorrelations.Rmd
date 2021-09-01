@@ -1,0 +1,106 @@
+---
+title: "PhenotypeCorrelations"
+author: "MAH"
+date: "8/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+if (!requireNamespace("pheatmap", quietly = TRUE))
+  BiocManager::install("pheatmap")
+
+if (!requireNamespace("Hmisc", quietly = TRUE))
+  install.packages("Hmisc")
+
+if (!requireNamespace("corrplot", quietly = TRUE))
+    install.packages("corrplot")
+
+
+library("devtools")
+library("data.table")
+library("tidyverse")
+library("here")
+library("broom")
+library("pheatmap")
+library("Hmisc")
+library("corrplot")
+```
+
+
+
+
+```{r}
+
+
+PhenoData.df <- as.data.frame(fread(here("Data", "PhenotypeData", "ScaledPheno_data.txt")))
+
+
+PhenoNumeric.df <- PhenoData.df %>% dplyr::select(-ID) %>% 
+  dplyr::select(-Ins_Glu_ratio)
+
+PhenoCors <- rcorr(as.matrix(PhenoNumeric.df, type = "pearson",              use="pairwise.complete.obs"))
+
+PhenoCorsCoeff <- PhenoCors$r
+PhenoCorsPval <- PhenoCors$P
+
+PhenoCorsTidy <- tidy(Pheno_Cors)
+
+
+
+write.csv(PhenoCorsTidy, file = here("Results", "Phenotype", "PhenoCorrTable.csv"), quote=FALSE)
+
+
+write.csv(PhenoCorsCoeff, file = here("Results", "Phenotype", "PhenoCorrCoefficients.csv"), quote=FALSE)
+
+write.csv(PhenoCorsPval, file = here("Results", "Phenotype", "PhenoCorrPval.csv"), quote=FALSE)
+
+
+```
+
+
+
+
+Create Heatmap using Pheatmap. Tutorial at:
+https://towardsdatascience.com/pheatmap-draws-pretty-heatmaps-483dab9a3cc
+https://cran.r-project.org/web/packages/pheatmap/pheatmap.pdf
+
+```{r}
+
+
+hmap <- pheatmap(PhenoCorsCoeff, main = "pheatmap default", cluster_rows = FALSE, cluster_cols = FALSE)
+
+
+pdf(here("Results", "Phenotype", "PhenotypeCorrelationsHeatMap.pdf"))
+hmap
+dev.off()
+hmap
+
+corrplot(PhenoCorsCoeff, p.mat = PhenoCorsPval, method = "circle", diag = FALSE, order = "hclust", tl.srt = 45, sig.level = c(0.0001,0.001, 0.01, 0.05), pch.cex = 0.9, insig = 'label_sig')
+
+
+pdf(here("Results", "Phenotype", "PhenotypeCorrelationsHeatMapVersion2.pdf"))
+corrplot(PhenoCorsCoeff, p.mat = PhenoCorsPval, method = "circle", diag = FALSE, order = "hclust", tl.srt = 45, sig.level = c(0.0001,0.001, 0.01, 0.05), pch.cex = 0.9, insig = 'label_sig')
+dev.off()
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+

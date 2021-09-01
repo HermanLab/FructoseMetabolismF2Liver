@@ -1,0 +1,137 @@
+---
+title: "Tlr4Genotyping"
+author: "MAH"
+date: "6/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r, echo=FALSE}
+
+library("tidyverse")
+library("data.table")
+library("here")
+
+
+```
+
+
+
+Genotyping Performed at rs3023006 in the TLR4 locus [C/A].  CC = homozygous C57; aa = homozygous c3h; ca = heterozygous
+
+```{r}
+
+Phenotypes <- fread(here("Data", "PhenotypeData", "F2_48males_Phenotype_all.txt"))
+Genotypes <- fread(here("Data", "PhenotypeData", "Tlr4GenotypesAllF2.txt"))
+Genotypes <- distinct(Genotypes)
+
+PhenoGenoData <- inner_join(Genotypes, Phenotypes)
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=BodyWeight)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "BW.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=HepaticTG)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "HepaticTG.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=Insulin)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "Insulin.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=Glucose)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "Glucose.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=Triglyceride)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "Triglyceride.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=Cholesterol)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "Cholesterol.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Tlr4Genotype, y=HepaticChol)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Tlr4", "HepaticChol.pdf"))
+
+print("BodyWeight")
+BW.lm <- lm(BodyWeight ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("HepaticTG")
+BW.lm <- lm(HepaticTG ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Insulin")
+BW.lm <- lm(Insulin ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Glucose")
+BW.lm <- lm(Glucose ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Triglyceride")
+BW.lm <- lm(Triglyceride ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Cholesterol")
+BW.lm <- lm(Cholesterol ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("HepaticChol")
+BW.lm <- lm(HepaticChol ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+
+
+
+
+```
+
+

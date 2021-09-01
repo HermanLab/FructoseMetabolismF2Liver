@@ -1,1 +1,1 @@
-# FructoseMetabolismF2Liver
+This Project contains data and scripts related the the fructose-fed F2 cross between C3H and C57 mice conducted in the Herman lab.

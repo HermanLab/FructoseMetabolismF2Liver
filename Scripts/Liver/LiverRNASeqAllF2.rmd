@@ -1,0 +1,174 @@
+
+---
+title: "F2RnaProcessingScript"
+author: "MAH"
+date: "9/1/2021"
+output: html_document
+---
+ 
+```{r setup, include=FALSE, echo=FALSE}
+ 
+knitr::opts_chunk$set(echo = TRUE)
+ 
+```
+ 
+
+ 
+Install essential libraries
+
+```{r}
+
+if (!requireNamespace("tidyverse", quietly = TRUE))
+    install.packages("tidyverse")
+
+if (!requireNamespace("data.table", quietly = TRUE))
+    install.packages("data.table")
+
+if (!requireNamespace("here", quietly = TRUE))
+  install.packages("here") 
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+if (!requireNamespace("edgeR", quietly = TRUE))
+  BiocManager::install("edgeR")
+
+if (!requireNamespace("biclust", quietly = TRUE))
+BiocManager::install("biclust")
+
+
+
+```
+ 
+
+Load essential libraries
+
+```{r}
+
+library("tidyverse")
+library ("data.table")
+library("here")
+library("edgeR")
+library("biclust")
+
+```
+
+ 
+
+Load data
+
+Data:
+A1_F2_1  A2_F2_9	A3_F2_17	A4_F2_25	A5_F2_33	A6_F2_41	A7_F2_3	A8_F2_28	A9_F2_42	A10_C3H_chow_1	A11_C57_chow_15	A12_KO_water_5	B1_F2_2	B2_F2_10	B3_F2_18	B4_F2_26	B5_F2_34	B6_F2_42	B7_F2_4	B8_F2_29	B9_F2_43	B10_C57_fructose_4	B11_C3H_fructose_18	B12_KO_fructose_7	C1_F2_3	C2_F2_11	C3_F2_19	C4_F2_27	C5_F2_35	C6_F2_43	C7_F2_12	C8_F2_31	C9_ChB_OX_Cre_neg1	C10_C3H_chow_5	C11_C57_chow_19	C12_WT_fructose_8	D1_F2_4	D2_F2_12	D3_F2_20	D4_F2_28	D5_F2_36	D6_F2_44	D7_F2_14	D8_F2_34	D9_ChB_OX_5	D10_C57_chow_7	D11_C57_fructose_20	D12_WT_water_9	E1_F2_5	E2_F2_13	E3_F2_21	E4_F2_29	E5_F2_37	E6_F2_45	E7_F2_15	E8_F2_36	E9_ChB_OX_Cre_neg6	E10_C3H_fructose_10	E11_KO_water_1	E12_KO_water_10	F1_F2_6	F2_F2_14	F3_F2_22	F4_F2_30	F5_F2_38	F6_F2_46	F7_F2_19	F8_F2_37	F9_ChB_OX_15	F10_C57_fructose_12	F11_WT_water_2	F12_WT_fructose_11	G1_F2_7	G2_F2_15	G3_F2_23	G4_F2_31	G5_F2_39	G6_F2_47	G7_F2_21	G8_F2_38	G9_ChB_OX_18	G10_C3H_chow_13	G11_KO_fructose_3	G12_KO_fructose_12	H1_F2_8	H2_F2_16	H3_F2_24	H4_F2_32	H5_F2_40	H6_F2_48	H7_F2_27	H8_F2_39	H9_ChB_OX_Cre_neg21	H10_C3H_fructose_14	H11_WT_fructose_4	H12_WT_water_13
+
+
+Keep only columns/data corresponding to F2 dataset. Samples corresponding to another experiment were also assessed on this plate.
+
+
+```{r}
+
+Samples <- c("A1_F2_1",	"B1_F2_2",	"A7_F2_3",	"C1_F2_3",	"B7_F2_4",	"D1_F2_4",	"E1_F2_5",	"F1_F2_6",	"G1_F2_7",	"H1_F2_8",	"A2_F2_9",	"B2_F2_10",	"C2_F2_11",	"C7_F2_12",	"D2_F2_12",	"E2_F2_13",	"D7_F2_14",	"F2_F2_14",	"E7_F2_15", "G2_F2_15",	"H2_F2_16",	"A3_F2_17",	"B3_F2_18",	"C3_F2_19",	"F7_F2_19",	"D3_F2_20",	"E3_F2_21",	"G7_F2_21",	"F3_F2_22",	"G3_F2_23",	"H3_F2_24",	"A4_F2_25",	"B4_F2_26",	"C4_F2_27",	"H7_F2_27",	"A8_F2_28",	"D4_F2_28",	"B8_F2_29",	"E4_F2_29",	"F4_F2_30",	"C8_F2_31",	"G4_F2_31",	"H4_F2_32",	"A5_F2_33",	"B5_F2_34",	"D8_F2_34",	"C5_F2_35",	"D5_F2_36",	"E8_F2_36", "E5_F2_37",	"F8_F2_37",	"F5_F2_38",	"G8_F2_38",	"G5_F2_39",	"H8_F2_39",	"H5_F2_40", "A6_F2_41",	"A9_F2_42",	"B6_F2_42",	"B9_F2_43",	"C6_F2_43",	"D6_F2_44", "E6_F2_45",	"F6_F2_46",	"G6_F2_47",	"H6_F2_48")
+
+InitialDataAll <- read.table(here("Data", "LiverData", "SSF-321.unq.refseq.umi.WellID.data.txt"), header=TRUE)
+
+InitialDataAll <- InitialDataAll[c("Gene_Symbol", Samples)]
+
+```
+ 
+ 
+Conduct EdgeR for "UnqRefseq data" to normalize expression and filter genes.  Check library for outliers.
+
+Filter out genes for which "rep_threshold" number of samples have less than "cpm_threshold" counts.
+
+The filtering command assesses the boolean as to whether the count for a gene/sample is greater than or equal to the cpm_threshold (1) and if it is, set it to TRUE (1), sum across the row, and see if it is greater than rep_threshold (boolean); so currently set to filter out all genes where less than half the samples have 0 counts.
+ 
+```{r}
+
+#Create DGEList data object:
+ 
+InitialData <- InitialDataAll
+genes <- InitialData[,1]
+EdgeRData <- DGEList(counts=InitialData[,2:ncol(InitialData)], genes=genes)
+
+summary(EdgeRData$counts)
+ 
+# Plot CPM distribution:
+hist(cpm(EdgeRData), xlim=c(0,50), breaks = 100000)
+
+
+cpm_threshold <- 1
+rep_threshold <- 6 
+
+keep <- rowSums(cpm(EdgeRData) >= cpm_threshold) >= rep_threshold
+EdgeRDataFiltered <- EdgeRData[keep,]
+
+dim(EdgeRData)
+dim(EdgeRDataFiltered)
+
+hist(cpm(EdgeRDataFiltered), xlim=c(0,50), breaks = 100000)
+
+```
+ 
+
+
+Normalize counts for sequencing depth per sample and analyze samples for outliers by unsupervised clustering of samples.
+
+```{r, include=FALSE, echo=FALSE}
+
+
+EdgeRDataFiltered <- calcNormFactors(EdgeRDataFiltered)
+EdgeRDataFiltered$samples
+
+jpeg(here("Results", "Liver", "UnqRefseq_cluster_data_logfc_AllF2.jpg"))
+plotMDS(EdgeRDataFiltered, method="logFC")
+dev.off()
+ 
+```
+
+Consolidate duplicates. 
+
+Sample F2_42 (both replicates) appears to be an extreme outlier compared to all other samples. We will delete this sample for further analysis.
+ 
+```{r}
+
+#Export normalized column with genename
+ 
+cps <- cpm(EdgeRDataFiltered, normalized.lib.sizes=TRUE)
+cps.df=as.data.frame(cps)
+cps.df=cbind(EdgeRDataFiltered$genes, cps.df)  #add gene names in first column
+ 
+SimpleSampleNames = make.unique(c("s1",   "s2",   "s3", "s3",  "s4", "s4",	"s5", 	"s6", 	"s7", 	"s8", 	"s9", 	"s10", 	"s11", 	"s12", "s12",	"s13", 	"s14", "s14", "s15", "s15",	"s16", 	"s17", 	"s18", 	"s19", "s19",	"s20", 	"s21", "s21",	"s22", 	"s23", 	"s24", 	"s25", 	"s26", 	"s27", "s27",	"s28", "s28", "s29", "s29",	"s30", 	"s31", "s31", 	"s32", 	"s33", 	"s34", "s34",	"s35", 	"s36", "s36",	"s37", "s37",	"s38", "s38",	"s39", "s39",	"s40", 	"s41", 	"s42","s42", 	"s43","s43", "s44", 	"s45", 	"s46", 	"s47", 	"s48"))
+
+colnames(cps.df)=c("gene", SimpleSampleNames)
+ 
+write.table(cps.df, file = here("Results", "Liver", "UnqRefseq_Cpm_AllF2.txt"), sep = "\t", row.names = FALSE, col.names = TRUE)
+
+#Consolidate duplicates
+
+Consolidated_cps.df <- cps.df %>% mutate(s3 = (s3 + s3.1) / 2, .keep = "unused") %>%
+  mutate(s4 = (s4 + s4.1) / 2, .keep = "unused") %>%
+  mutate(s12 = (s12 + s12.1) / 2, .keep = "unused") %>%
+  mutate(s14 = (s14 + s14.1) / 2, .keep = "unused") %>%
+  mutate(s15 = (s15 + s15.1) / 2, .keep = "unused") %>%
+  mutate(s19 = (s19 + s19.1) / 2, .keep = "unused") %>%
+  mutate(s21 = (s21 + s21.1) / 2, .keep = "unused") %>%
+  mutate(s27 = (s27 + s27.1) / 2, .keep = "unused") %>%
+  mutate(s28 = (s28 + s28.1) / 2, .keep = "unused") %>%
+  mutate(s29 = (s29 + s29.1) / 2, .keep = "unused") %>%
+  mutate(s31 = (s31 + s31.1) / 2, .keep = "unused") %>%
+  mutate(s34 = (s34 + s34.1) / 2, .keep = "unused") %>%
+  mutate(s36 = (s36 + s36.1) / 2, .keep = "unused") %>%
+  mutate(s37 = (s37 + s37.1) / 2, .keep = "unused") %>%
+  mutate(s38 = (s38 + s38.1) / 2, .keep = "unused") %>%
+  mutate(s39 = (s39 + s39.1) / 2, .keep = "unused") %>%
+  mutate(s42 = (s42 + s42.1) / 2, .keep = "unused") %>%
+  mutate(s43 = (s43 + s43.1) / 2, .keep = "unused")
+
+Consolidated_cps_d42.df <- dplyr::select(Consolidated_cps.df, -s42)
+
+write.table(Consolidated_cps.df, file = here("Results", "Liver", "Consolidated_UnqRefseq_Cpm_AllF2.txt"), sep = "\t", row.names = FALSE, col.names = TRUE, quote=FALSE)
+
+write.table(Consolidated_cps_d42.df, file = here("Results", "Liver", "Consolidated_UnqRefseq_Cpm_AllF2_d42.txt"), sep = "\t", row.names = FALSE, col.names = TRUE, quote=FALSE)
+
+```
+
+

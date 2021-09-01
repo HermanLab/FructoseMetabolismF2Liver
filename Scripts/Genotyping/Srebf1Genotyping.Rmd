@@ -1,0 +1,139 @@
+---
+title: "Srebf1Genotyping"
+author: "MAH"
+date: "8/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r, echo=FALSE}
+
+library("tidyverse")
+library("data.table")
+library("here")
+
+
+```
+
+
+
+Genotyping Performed at rs26973133, Chr11: 60210882, SNP, C/T in the Srebf1 locus; TT = homozygous C57; CC = homozygous C3H; TC = heterozygous
+
+```{r}
+
+Phenotypes <- fread(here("Data", "PhenotypeData", "F2_48males_Phenotype_all.txt"))
+Genotypes <- fread(here("Data", "PhenotypeData", "Srebf1GenotypesAllF2.txt"))
+Genotypes <- distinct(Genotypes)
+
+PhenoGenoData <- inner_join(Genotypes, Phenotypes)
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=BodyWeight)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "BW.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=HepaticTG)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "HepaticTG.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=Insulin)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "Insulin.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=Glucose)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "Glucose.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=Triglyceride)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "Triglyceride.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=Cholesterol)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "Cholesterol.pdf"))
+
+p <- ggplot(PhenoGenoData, aes(x=Srebf1Genotype, y=HepaticChol)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter(width = 0.1, height = 0) +
+  theme(aspect.ratio = 2) +
+  expand_limits(x = 0, y = 0) +
+  theme_classic()
+p
+ggsave(plot = p, width = 3, height = 3, dpi = 300, filename = here("Results", "Srebf1", "HepaticChol.pdf"))
+
+
+print("BodyWeight")
+BW.lm <- lm(BodyWeight ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+
+print("HepaticTG")
+BW.lm <- lm(HepaticTG ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Insulin")
+BW.lm <- lm(Insulin ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Glucose")
+BW.lm <- lm(Glucose ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Triglyceride")
+BW.lm <- lm(Triglyceride ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("Cholesterol")
+BW.lm <- lm(Cholesterol ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+print("HepaticChol")
+BW.lm <- lm(HepaticChol ~ GenotypeCode, PhenoGenoData)
+summary(BW.lm)
+
+
+
+
+
+```
+
+
